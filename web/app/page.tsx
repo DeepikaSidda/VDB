@@ -36,6 +36,7 @@ export default function HomePage() {
   const [snapshot, setSnapshot] = useState<SessionSnapshot | null>(null);
   const [refinementDone, setRefinementDone] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopPolling = useCallback(() => {
@@ -77,6 +78,7 @@ export default function HomePage() {
       setSnapshot(null);
       setRefinementDone(false);
       setGenerationId(null);
+      setStarting(true);
       stopPolling();
       try {
         const res = await fetch('/api/generate', {
@@ -93,6 +95,8 @@ export default function HomePage() {
         setSnapshot(data as SessionSnapshot);
       } catch {
         setStartError('Could not reach the generation service.');
+      } finally {
+        setStarting(false);
       }
     },
     [stopPolling],
@@ -111,7 +115,7 @@ export default function HomePage() {
 
   return (
     <>
-      {!generationId && (
+      {!generationId && !starting && (
         <>
           <div className="tabs">
             {MODES.map((m) => (
@@ -138,6 +142,17 @@ export default function HomePage() {
 
           <SavedBackends onOpen={(id) => setGenerationId(id)} />
         </>
+      )}
+
+      {starting && (
+        <section className="panel" style={{ textAlign: 'center', padding: '2.5rem 1.5rem' }}>
+          <span className="spinner" />
+          <h2 style={{ marginTop: '0.75rem' }}>Generating your backend…</h2>
+          <p className="muted">
+            Modeling your data, deploying the schema to Amazon Aurora, loading rows, and
+            generating the APIs &amp; dashboard. This can take up to ~30 seconds.
+          </p>
+        </section>
       )}
 
       {startError && <div className="error-box">{startError}</div>}

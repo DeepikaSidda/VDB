@@ -3,6 +3,7 @@ import { startGeneration, toSnapshot } from '@/lib/backend';
 import type { JobInput } from '../../../../dist/src/model/types.js';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 /**
  * POST /api/generate
@@ -87,6 +88,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Unknown mode "${mode}".` }, { status: 400 });
   }
 
-  const session = startGeneration(input, label);
+  const session = await startGeneration(input, label);
   return NextResponse.json(toSnapshot(session), { status: 202 });
 }

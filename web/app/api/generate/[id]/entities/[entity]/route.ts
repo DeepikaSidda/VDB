@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getSession, type GenerationSession } from '@/lib/backend';
+import { getOrReopenSession, type GenerationSession } from '@/lib/backend';
 import { listRecords, createRecord, type ListParams } from '@/lib/crud';
 import type { FilterOperator } from '../../../../../../../dist/src/dashboard/query.js';
 import type { EntityRecord } from '../../../../../../../dist/src/api/crudRuntime.js';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 const FILTER_OPS: ReadonlySet<string> = new Set([
   'eq',
@@ -20,8 +21,8 @@ type Guard =
   | { ok: false; response: NextResponse }
   | { ok: true; session: GenerationSession };
 
-function requireDeployed(id: string): Guard {
-  const session = getSession(id);
+async function requireDeployed(id: string): Promise<Guard> {
+  const session = await getOrReopenSession(id);
   if (!session) {
     return {
       ok: false,
@@ -52,7 +53,7 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string; entity: string } },
 ) {
-  const guard = requireDeployed(params.id);
+  const guard = await requireDeployed(params.id);
   if (!guard.ok) return guard.response;
 
   const url = new URL(request.url);
@@ -89,7 +90,7 @@ export async function POST(
   request: Request,
   { params }: { params: { id: string; entity: string } },
 ) {
-  const guard = requireDeployed(params.id);
+  const guard = await requireDeployed(params.id);
   if (!guard.ok) return guard.response;
 
   let payload: EntityRecord;

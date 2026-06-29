@@ -5,17 +5,24 @@
   "description": "Next.js (Vercel) frontend for the AI Database Architect: prompt input, refinement, job-status, and the generated Admin_Dashboard wired to the backend pipeline.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "tsc -p ../tsconfig.build.json && next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1075.0",
+    "mysql2": "^3.22.5",
     "next": "14.2.15",
+    "pdf-parse": "^2.4.5",
+    "pg": "^8.22.0",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "20.14.0",
+    "@types/pdf-parse": "^1.1.5",
+    "@types/pg": "^8.20.0",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
     "typescript": "5.6.2"

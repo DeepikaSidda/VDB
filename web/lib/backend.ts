@@ -135,25 +135,30 @@ function newId(): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Start a generation run from any input kind (prompt, uploaded document, or
- * existing-database import). Returns the generation id immediately; the run
- * proceeds asynchronously and its progress is observable via {@link getSession}
- * / {@link toSnapshot}. `label` is a short human description for the UI.
+ * Run a generation to completion (prompt, document, or import) and return the
+ * finished session. Unlike a fire-and-forget background job, this **awaits** the
+ * full pipeline — which is required on serverless platforms (e.g. Vercel),
+ * where background work is killed once the response is sent and in-memory state
+ * is not shared across invocations.
+ *
+ * For a live database deploy the session is keyed by the deployed schema name
+ * (`gen_<id>`), so any later request — even on a different serverless instance —
+ * can reconstruct it from the database via {@link getOrReopenSession}.
  */
-export function startGeneration(input: JobInput, label: string): GenerationSession {
-  const id = newId();
+export async function startGeneration(
+  input: JobInput,
+  label: string,
+): Promise<GenerationSession> {
+  const tempId = newId();
   const session: GenerationSession = {
-    id,
+    id: tempId,
     label,
     status: 'running',
     stage: 'SUBMITTED',
     stageHistory: [{ stage: 'SUBMITTED', at: Date.now() }],
     createdAt: Date.now(),
   };
-  SESSIONS.set(id, session);
 
-  // Resolve real-vs-stub adapters from the environment (AIDA_LLM_* / AIDA_DB_*).
-  // With no env set this runs fully locally (stub LLM + in-memory provisioner).
   const { pipeline } = createPipelineFromEnv(process.env, {
     observer: {
       onStageTransition: (event) => {
@@ -166,39 +171,57 @@ export function startGeneration(input: JobInput, label: string): GenerationSessi
     },
   });
 
-  // Fire-and-forget: the run advances the session in the background. The
-  // in-memory pipeline completes quickly, but the UI still polls the stage so
-  // the same code path works against a slower (e.g. live-AWS) backend.
-  void pipeline
-    .run(input)
-    .then((result) => {
-      const { job, backend, dataPersistence } = result;
-      session.status = job.status === 'deployed' ? 'deployed' : 'failed';
-      session.stage = job.currentStage;
-      if (job.failure) {
-        session.failure = job.failure;
-      }
-      if (backend) {
-        session.backend = backend;
-      }
-      if (dataPersistence) {
-        session.dataPersistence = dataPersistence;
-      }
-    })
-    .catch((error: unknown) => {
-      session.status = 'failed';
-      session.failure = {
-        stage: session.stage,
-        reason: error instanceof Error ? error.message : String(error),
-      };
-    });
+  try {
+    const { job, backend, dataPersistence } = await pipeline.run(input);
+    session.status = job.status === 'deployed' ? 'deployed' : 'failed';
+    session.stage = job.currentStage;
+    if (job.failure) session.failure = job.failure;
+    if (backend) session.backend = backend;
+    if (dataPersistence) session.dataPersistence = dataPersistence;
 
+    // Key the session by its deployed schema so it is reconstructable from the
+    // database on any instance (serverless-safe).
+    if (dataPersistence?.schema) {
+      session.id = dataPersistence.schema;
+    }
+  } catch (error) {
+    session.status = 'failed';
+    session.failure = {
+      stage: session.stage,
+      reason: error instanceof Error ? error.message : String(error),
+    };
+  }
+
+  SESSIONS.set(session.id, session);
   return session;
 }
 
-/** Look up a tracked session by id. */
+/** Look up a tracked session by id (in-memory only). */
 export function getSession(id: string): GenerationSession | undefined {
   return SESSIONS.get(id);
+}
+
+/**
+ * Look up a session, reconstructing it from the live database when it is not in
+ * memory (e.g. a different serverless instance handled the request, or the
+ * process restarted). For a live deploy the id is the schema name, so the
+ * backend can be rebuilt by introspecting that schema.
+ */
+export async function getOrReopenSession(
+  id: string,
+): Promise<GenerationSession | undefined> {
+  const existing = SESSIONS.get(id);
+  if (existing) {
+    return existing;
+  }
+  if (/^gen_[a-z0-9_]+$/i.test(id)) {
+    try {
+      return await openGeneration(id);
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
 }
 
 /** Project a session into its client-facing, serializable snapshot. */
@@ -471,7 +494,7 @@ export async function openGeneration(schema: string): Promise<GenerationSession>
     auth: new AuthService(),
   };
 
-  const id = newId();
+  const id = schema;
   const now = Date.now();
   const session: GenerationSession = {
     id,
