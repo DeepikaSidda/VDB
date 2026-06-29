@@ -1,0 +1,23 @@
+{
+  "name": "ai-database-architect-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Next.js (Vercel) frontend for the AI Database Architect: prompt input, refinement, job-status, and the generated Admin_Dashboard wired to the backend pipeline.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "14.2.15",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.0",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "typescript": "5.6.2"
+  }
+}

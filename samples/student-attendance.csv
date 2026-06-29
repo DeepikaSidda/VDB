@@ -1,0 +1,9 @@
+rollNo,studentName,branch,facultyName,facultyDept,classDate,present
+101,Ann Sharma,CSE,Dr. Smith,Computer Science,2024-01-10,true
+102,Bob Verma,CSE,Dr. Smith,Computer Science,2024-01-10,false
+103,Cara Iyer,ECE,Dr. Lee,Electronics,2024-01-10,true
+104,Dev Rao,ECE,Dr. Lee,Electronics,2024-01-11,true
+105,Esha Nair,CSE,Dr. Smith,Computer Science,2024-01-11,true
+106,Farhan Ali,ME,Dr. Patel,Mechanical,2024-01-11,false
+107,Gita Bose,ME,Dr. Patel,Mechanical,2024-01-12,true
+108,Hari Menon,ECE,Dr. Lee,Electronics,2024-01-12,true

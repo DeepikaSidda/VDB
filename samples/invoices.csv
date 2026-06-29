@@ -1,0 +1,7 @@
+invoiceNo,invoiceDate,customerName,customerEmail,productName,unitPrice,quantity
+INV-001,2024-02-01,Acme Corp,billing@acme.com,Widget,9.99,10
+INV-001,2024-02-01,Acme Corp,billing@acme.com,Gadget,19.50,4
+INV-002,2024-02-03,Globex,ap@globex.com,Widget,9.99,25
+INV-002,2024-02-03,Globex,ap@globex.com,Sprocket,4.25,100
+INV-003,2024-02-05,Initech,finance@initech.com,Gadget,19.50,2
+INV-004,2024-02-06,Acme Corp,billing@acme.com,Sprocket,4.25,50

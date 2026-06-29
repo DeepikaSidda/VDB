@@ -1,0 +1,33 @@
+{
+  "name": "ai-database-architect",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Backend engine for the AI Database Architect: converts business requirements into a production-ready relational backend on AWS.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "generate": "node dist/src/cli.js",
+    "cleanup:schemas": "node scripts/cleanup-generations.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pdf-parse": "^1.1.5",
+    "fast-check": "^3.22.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1075.0",
+    "@types/pg": "^8.20.0",
+    "mysql2": "^3.22.5",
+    "pdf-parse": "^2.4.5",
+    "pg": "^8.22.0",
+    "xlsx": "^0.18.5"
+  }
+}

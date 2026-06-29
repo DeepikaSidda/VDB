@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Secrets / local config — never commit
+.aida-db-pw.txt
+.env
+.env.*
+!.env.example
