@@ -185,6 +185,3 @@ TypeScript · Node.js · Next.js / React · AWS Bedrock (Amazon Nova) · Amazon 
 
 ---
 
-## 📜 License
-
-Provided as-is for demonstration purposes.
