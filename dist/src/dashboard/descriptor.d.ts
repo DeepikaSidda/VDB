@@ -1,0 +1,86 @@
+/**
+ * Admin_Dashboard descriptor generation.
+ *
+ * The Admin_Dashboard is a descriptor-driven projection of the Data_Model:
+ * the generated Next.js views render entirely from a `DashboardDescriptor`
+ * that this module produces. Keeping descriptor generation a pure function of
+ * the Data_Model (the "one IR, many projections" principle) makes the
+ * dashboard's structure deterministic and directly testable against the model.
+ *
+ * This module covers descriptor generation only (Req 7.1, 7.2). The search /
+ * filter query logic that consumes `searchableAttributes` /
+ * `filterableAttributes` lives separately.
+ */
+import type { DataModel, DataType } from '../model/types.js';
+/**
+ * The root dashboard descriptor: the navigable list of entity views.
+ *
+ * The `entities` list corresponds one-to-one with the Data_Model's entities,
+ * in the same order, so the set of entities the dashboard exposes is exactly
+ * the set of entities in the model (Req 7.1).
+ */
+export type DashboardDescriptor = {
+    /** Navigable list of generated entities (Req 7.1). */
+    entities: EntityView[];
+};
+/**
+ * A single entity's view configuration in the dashboard.
+ */
+export type EntityView = {
+    /** The name of the entity this view represents (matches `Entity.name`). */
+    entityName: string;
+    /** One column per attribute of the entity. */
+    columns: ColumnView[];
+    /** Bounded page size; always <= 100 (Req 7.2 / 7.6). */
+    pageSize: number;
+    /** Names of attributes the dashboard exposes for free-text search. */
+    searchableAttributes: string[];
+    /** Names of attributes the dashboard exposes as filters. */
+    filterableAttributes: string[];
+};
+/**
+ * A single column in an entity view, derived from one attribute.
+ */
+export type ColumnView = {
+    /** Attribute name (matches `Attribute.name`). */
+    name: string;
+    /** The attribute's data type, surfaced for display/formatting. */
+    dataType: DataType;
+    /** True when the attribute participates in the entity's primary key. */
+    isPrimaryKey: boolean;
+    /** True when the attribute carries a UNIQUE constraint. */
+    isUnique: boolean;
+    /** True when the attribute carries a NOT_NULL constraint. */
+    isNotNull: boolean;
+    /** True when the attribute carries a FOREIGN_KEY constraint. */
+    isForeignKey: boolean;
+};
+/**
+ * Default dashboard page size. Must be <= 100 (Req 7.2) and is kept
+ * consistent with the generated CRUD API's default list page size of 25
+ * (Req 5.8) so the dashboard and API paginate identically by default.
+ */
+export declare const DEFAULT_DASHBOARD_PAGE_SIZE = 25;
+/** Hard upper bound on dashboard page size (Req 7.2 / 7.6). */
+export declare const MAX_DASHBOARD_PAGE_SIZE = 100;
+/**
+ * Generate the dashboard descriptor for a Data_Model.
+ *
+ * Pure function: same model in, same descriptor out, with no side effects.
+ *
+ * Design decisions:
+ * - **Entity set equals the model's entity set (Req 7.1).** Every entity in
+ *   the model — including synthesized many-to-many join entities — produces
+ *   exactly one `EntityView`, in model order. Join entities hold real,
+ *   manageable rows (the M:N association records), so including them keeps the
+ *   dashboard's navigable set identical to the model's entity set.
+ * - **Page size (Req 7.2).** Each view uses {@link DEFAULT_DASHBOARD_PAGE_SIZE}
+ *   (25), which is <= the 100-record bound and matches the CRUD API default.
+ * - **Searchable attributes.** Only textual attributes (TEXT / VARCHAR), since
+ *   search is a substring "contains" match (Req 7.6) that only makes sense for
+ *   text columns.
+ * - **Filterable attributes.** All attributes. Every supported `DataType` is a
+ *   scalar value that can back an equality/range filter, so the dashboard
+ *   exposes a filter on each column (Req 7.7).
+ */
+export declare function generateDescriptor(model: DataModel): DashboardDescriptor;

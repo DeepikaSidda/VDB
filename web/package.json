@@ -5,7 +5,7 @@
   "description": "Next.js (Vercel) frontend for the AI Database Architect: prompt input, refinement, job-status, and the generated Admin_Dashboard wired to the backend pipeline.",
   "scripts": {
     "dev": "next dev",
-    "build": "tsc -p ../tsconfig.build.json && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },

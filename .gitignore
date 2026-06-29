@@ -1,5 +1,9 @@
 node_modules/
-dist/
+# The compiled engine `dist/src` is committed so the Vercel web build can
+# bundle it without running a cross-folder TypeScript build. Everything else
+# under dist/ (e.g. dist/test) stays ignored.
+/dist/*
+!/dist/src
 *.tsbuildinfo
 
 # Secrets / local config — never commit
