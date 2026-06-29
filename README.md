@@ -2,7 +2,7 @@
 
 **Turn a prompt, a document, or an existing database into a live AWS backend — relational schema, CRUD APIs, and an admin dashboard — in seconds.**
 
-AI Database Architect takes whatever you already have — a sentence, a messy spreadsheet, or a legacy database — and produces a **production-shaped relational backend**: it models the data, deploys an isolated schema to **Amazon RDS / Aurora PostgreSQL**, loads your real rows, and generates a full **CRUD REST API** plus an **admin dashboard**. A round-trip verification gate guarantees a lossy schema can never deploy.
+AI Database Architect takes whatever you already have — a sentence, a messy spreadsheet, or a legacy database — and produces a **production-shaped relational backend**: it models the data, deploys an isolated schema to **Amazon Aurora PostgreSQL (Serverless v2)**, loads your real rows, and generates a full **CRUD REST API** plus an **admin dashboard**. A round-trip verification gate guarantees a lossy schema can never deploy.
 
 ---
 
@@ -16,7 +16,7 @@ AI Database Architect takes whatever you already have — a sentence, a messy sp
 
 Every path then generates:
 - an ordered SQL migration, gated by a **round-trip verifier** (parse the DDL back into a model and structurally diff it — fail closed on any drift);
-- an isolated `gen_<id>` schema deployed to **RDS PostgreSQL**;
+- an isolated `gen_<id>` schema deployed to **Amazon Aurora PostgreSQL**;
 - a **CRUD REST API** + **admin dashboard** that read and write the real database;
 - a **structure (ER) diagram** and a **REST API panel** with copy-paste `curl`.
 
@@ -37,7 +37,7 @@ Input ─► Modeling Engine ─► Refinement ─► Schema Generator ─► Ro
 - **Modeling Engine** — prompt path via AWS Bedrock; document path via deterministic, LLM-free relational decomposition (detects repeating field groups and extracts them into their own entities).
 - **Schema Generator** — projects the IR to ordered PostgreSQL DDL (topological order, FK indexes, constraints).
 - **Round-Trip Verifier** — reconstructs the IR from the generated DDL and diffs it against the source; blocks deploy on any difference.
-- **Provisioner** — transactional migration runner; one isolated schema per generation.
+- **Provisioner** — transactional migration runner; one isolated schema per generation on **Amazon Aurora PostgreSQL**.
 - **API / Dashboard generators + Auth Service + Orchestrator** state machine.
 
 Validated with **property-based testing** (fast-check): **211 tests** covering 46 correctness properties.
@@ -51,7 +51,7 @@ src/                Backend engine (TypeScript, ESM)
   model/            The Data_Model IR + invariants
   modeling/         Prompt + document modeling, Bedrock client
   schema/           DDL generation + round-trip verifier + targets
-  provisioner/      Transactional RDS migration runner + data seeding + indexing
+  provisioner/      Transactional Aurora migration runner + data seeding + indexing
   api/              CRUD API surface + runtime
   auth/             Role-based auth (hashed passwords, JWT)
   dashboard/        Dashboard descriptor + query logic
@@ -71,7 +71,7 @@ scripts/            Helper scripts (schema cleanup, import-source setup)
 
 ### Prerequisites
 - **Node.js ≥ 18**
-- Optional (for live mode): an **AWS account** with Bedrock access and an **RDS/Aurora PostgreSQL** instance.
+- Optional (for live mode): an **AWS account** with Bedrock access and an **Amazon Aurora PostgreSQL** cluster (Serverless v2 works great).
 
 ### 1. Install & build the engine
 ```bash
@@ -94,7 +94,7 @@ npm run dev        # http://localhost:3000
 The app works in two modes, selected by environment variables (see below):
 
 - **Local / demo mode (no AWS needed):** uses a deterministic offline model generator and an in-memory database. Great for trying the UI and the modeling instantly.
-- **Live mode:** real AWS Bedrock for prompt modeling + real RDS/Aurora PostgreSQL for deployment and data.
+- **Live mode:** real AWS Bedrock for prompt modeling + real **Amazon Aurora PostgreSQL** for deployment and data.
 
 ---
 
@@ -115,14 +115,14 @@ AWS credentials for Bedrock come from your standard AWS chain (e.g. `aws configu
 ### Deployment target
 | Variable | Values | Notes |
 |----------|--------|-------|
-| `AIDA_DEPLOY_TARGET` | `memory` \| `postgres` | `memory` (default) = in-memory; `postgres` = live RDS/Aurora. |
-| `AIDA_DB_HOST` | host | Required for `postgres`. |
+| `AIDA_DEPLOY_TARGET` | `memory` \| `postgres` | `memory` (default) = in-memory; `postgres` = live Amazon Aurora PostgreSQL. |
+| `AIDA_DB_HOST` | Aurora cluster endpoint | Required for `postgres` (e.g. `your-cluster.cluster-xxxx.us-east-1.rds.amazonaws.com`). |
 | `AIDA_DB_PORT` | default `5432` | |
 | `AIDA_DB_NAME` | database name | |
 | `AIDA_DB_USER` | user | |
 | `AIDA_DB_PASSWORD` | password | |
 
-> Each generation is deployed into its own `gen_<id>` schema, so repeated runs never collide.
+> Each generation is deployed into its own `gen_<id>` schema on the Aurora cluster, so repeated runs never collide.
 
 ---
 
@@ -181,7 +181,7 @@ Validation (required, unique, email format, numeric range, foreign-key existence
 
 ## 🛠️ Built with
 
-TypeScript · Node.js · Next.js / React · AWS Bedrock (Amazon Nova) · Amazon RDS / Aurora PostgreSQL · node-postgres (`pg`) · `mysql2` · SheetJS (`xlsx`) · `pdf-parse` / `pdfjs-dist` · Vitest · fast-check (property-based testing) · built spec-first with **Kiro**.
+TypeScript · Node.js · Next.js / React · AWS Bedrock (Amazon Nova) · Amazon Aurora PostgreSQL (Serverless v2) · node-postgres (`pg`) · `mysql2` · SheetJS (`xlsx`) · `pdf-parse` / `pdfjs-dist` · Vitest · fast-check (property-based testing) · built spec-first with **Kiro**.
 
 ---
 
