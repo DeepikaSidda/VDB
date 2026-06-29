@@ -574,7 +574,12 @@ export class GenerationPipeline {
                 // Optimization is advisory; ignore failures.
             }
         }
-        return { job, backend, dataPersistence };
+        return {
+            job,
+            backend,
+            dataPersistence,
+            deployedSchema: job.status === 'deployed' ? deployedSchema : undefined,
+        };
     }
 }
 /**

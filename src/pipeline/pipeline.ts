@@ -234,6 +234,13 @@ export type PipelineRunResult = {
     detail?: unknown;
     error?: string;
   };
+  /**
+   * The live schema this run deployed into, when it deployed to a per-run
+   * isolated schema (live Postgres/Aurora). Present for every successful live
+   * deploy regardless of whether seed rows existed — so callers can key the
+   * generation by its schema and reconstruct it on any (serverless) instance.
+   */
+  deployedSchema?: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -795,7 +802,12 @@ export class GenerationPipeline {
       }
     }
 
-    return { job, backend, dataPersistence };
+    return {
+      job,
+      backend,
+      dataPersistence,
+      deployedSchema: job.status === 'deployed' ? deployedSchema : undefined,
+    };
   }
 }
 

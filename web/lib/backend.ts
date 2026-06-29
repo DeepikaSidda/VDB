@@ -172,7 +172,7 @@ export async function startGeneration(
   });
 
   try {
-    const { job, backend, dataPersistence } = await pipeline.run(input);
+    const { job, backend, dataPersistence, deployedSchema } = await pipeline.run(input);
     session.status = job.status === 'deployed' ? 'deployed' : 'failed';
     session.stage = job.currentStage;
     if (job.failure) session.failure = job.failure;
@@ -180,9 +180,15 @@ export async function startGeneration(
     if (dataPersistence) session.dataPersistence = dataPersistence;
 
     // Key the session by its deployed schema so it is reconstructable from the
-    // database on any instance (serverless-safe).
-    if (dataPersistence?.schema) {
-      session.id = dataPersistence.schema;
+    // database on any instance (serverless-safe). Every successful live deploy
+    // reports `deployedSchema` — even prompt-mode runs with no seed rows — so
+    // the returned id is always the schema name a fresh instance can reopen.
+    const schema = deployedSchema ?? dataPersistence?.schema;
+    if (schema) {
+      session.id = schema;
+      if (!session.dataPersistence) {
+        session.dataPersistence = { schema, ok: true };
+      }
     }
   } catch (error) {
     session.status = 'failed';
